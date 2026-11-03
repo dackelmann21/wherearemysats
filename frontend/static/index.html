@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>WhereAreMySats — Bitcoin Lineage Tracker</title>
+  <link rel="stylesheet" href="/static/css/style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <a href="#dashboard" class="brand" id="brand-link" title="WhereAreMySats Dashboard">
+      <span class="brand-logo">₿</span>
+      <span class="brand-name">WhereAreMySats</span>
+      <span class="brand-version">v{{APP_VERSION}}</span>
+    </a>
+    <nav class="tabs" aria-label="Main navigation">
+      <button class="tab" data-view="dashboard">Dashboard</button>
+      <button class="tab" data-view="current-wallet">Current Wallet</button>
+      <button class="tab" data-view="acquisitions">Records &amp; Origins</button>
+      <details class="nav-group">
+        <summary>Wallet Setup</summary>
+        <div class="nav-group-items">
+          <button class="tab" data-view="inventory">Wallet Inventory</button>
+          <button class="tab" data-view="registry">Known Addresses</button>
+        </div>
+      </details>
+      <button class="tab" data-view="start">Start Trace</button>
+      <button class="tab" data-view="traces">Traces</button>
+      <button class="tab" data-view="status">Node Status</button>
+      <button class="tab" data-view="node-settings">Node Settings</button>
+    </nav>
+    <button class="btn" id="central-export">Export CSV</button>
+    <div class="node-pill" id="node-pill" title="Checking node…">checking…</div>
+  </header>
+
+  <main id="app">
+    <section id="view-reports" class="view hidden"></section>
+    <section id="view-start" class="view"></section>
+    <section id="view-traces" class="view hidden"></section>
+    <section id="view-inventory" class="view hidden"></section>
+    <section id="view-acquisitions" class="view hidden"></section>
+    <section id="view-registry" class="view hidden"></section>
+    <section id="view-status" class="view hidden"></section>
+    <section id="view-node-settings" class="view hidden"></section>
+    <section id="view-trace" class="view hidden"></section>
+  </main>
+
+  <footer class="app-footer">
+    <pre class="dackel" aria-hidden="true">
+                         __
+   (\,------------------'()'--o
+    (_    _____________    /~"
+     (_)_)             (_)_)</pre>
+    <span class="app-footer-by">made by Dackelmann</span>
+    <span class="app-footer-meta"><span class="app-footer-license">AGPL-3.0</span> · <a id="app-footer-source" class="app-footer-source" rel="noopener noreferrer" target="_blank">Source</a></span>
+    <button type="button" class="btn small app-footer-donate" id="donate-open">Donate for the Dackel</button>
+  </footer>
+
+  <div id="modal-backdrop" class="modal-backdrop hidden">
+    <div id="modal" class="modal"></div>
+  </div>
+
+  <script src="/static/js/api.js"></script>
+  <script src="/static/js/format.js"></script>
+  <script src="/static/js/graph.js"></script>
+  <script src="/static/js/pages/start.js"></script>
+  <script src="/static/js/pages/status.js"></script>
+  <script src="/static/js/pages/node-settings.js"></script>
+  <script src="/static/js/pages/wallet-discovery.js"></script>
+  <script src="/static/js/pages/registry.js"></script>
+  <script src="/static/js/pages/traces.js"></script>
+  <script src="/static/js/pages/traceview.js"></script>
+  <script src="/static/js/pages/acquisitions.js"></script>
+  <script src="/static/js/pages/provenance.js"></script>
+  <script src="/static/js/pages/inventory.js"></script>
+  <script src="/static/js/pages/reports.js"></script>
+  <script src="/static/js/navigation-ui.js"></script>
+  <script src="/static/js/donate.js"></script>
+  <script src="/static/js/app-footer.js"></script>
+  <script src="/static/js/app.js"></script>
+</body>
+</html>
