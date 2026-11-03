@@ -164,10 +164,9 @@ class AddressDiscovery:
         """Resolve candidate outputs paying to ``address`` from scan ``relevant_blocks``.
 
         Shared by the synchronous ``_resolve_with_scanblocks`` path and the async
-        address-discovery job lifecycle (REVERSE_ADDRESS_DISCOVERY_LIFECYCLE_FIX_
-        REQUIREMENTS.md): when Core finishes an asynchronous scan, the completion
-        poll hands the returned relevant block hashes here instead of issuing
-        another scan. Pure read, identical normalization.
+        address-discovery job lifecycle: when Core finishes an asynchronous
+        scan, the completion poll hands the returned relevant block hashes here
+        instead of issuing another scan. Pure read, identical normalization.
         """
         outpoints: dict[tuple[str, int], dict[str, Any]] = {}
         for blockhash in relevant_blocks or []:

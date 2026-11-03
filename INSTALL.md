@@ -1,117 +1,126 @@
-# Installation and operation
+# Installation
 
-This guide installs WhereAreMySats (WAMS) with Docker on a Linux host, connects it to
-your own Bitcoin Core node, and covers updates, backups and troubleshooting. It was
-written for **Ubuntu Server LTS** (tested on 24.04) in a virtual machine; other Linux
-distributions work if you install Docker with their own instructions.
+This guide installs WhereAreMySats (WAMS) with Docker on a fresh **Ubuntu Server LTS**
+(tested on 24.04), for example a virtual machine in your home network.
 
-Related guides:
+**Before you start:**
 
-- [NODE_SETUP.md](NODE_SETUP.md): what WAMS needs from Bitcoin Core and how to allow
-  the RPC connection.
-- [SECURITY.md](SECURITY.md): who can reach WAMS, access variants (SSH tunnel, LAN,
-  reverse proxy), secrets and backups. **Read it before you open WAMS to your LAN.**
-- [SIGNET.md](SIGNET.md): try WAMS on signet before using it with mainnet data.
+- The server has 2 CPU cores, 4 GB RAM, 20 GB disk and internet access.
+- You run your own **Bitcoin Core node** (31.1 or newer, fully synced, with `txindex=1`
+  and `txospenderindex=1`) that the server can reach over RPC. See
+  [NODE_SETUP.md](NODE_SETUP.md). WAMS does not run a node itself.
+- Want to try first without mainnet data? See [SIGNET.md](SIGNET.md).
 
-## Placeholders
+## Quick install
 
-Every value in angle brackets is a placeholder. Replace it with your own value and do
-not paste real values into public issues.
+Log in to the server and paste this block:
+
+```bash
+# 1. Install Docker
+curl -fsSL https://get.docker.com | sudo sh
+
+# 2. Download WAMS, check the checksum and unpack it into ~/wherearemysats
+VERSION=0.19.8
+BASE=https://github.com/dackelmann21/wherearemysats/releases/download/v$VERSION
+mkdir -p ~/wherearemysats && cd ~/wherearemysats
+curl -fsSLO $BASE/wams-public-$VERSION.tar.gz
+curl -fsSLO $BASE/wams-public-$VERSION.tar.gz.sha256
+sha256sum -c wams-public-$VERSION.tar.gz.sha256 && tar -xzf wams-public-$VERSION.tar.gz --strip-components=1
+
+# 3. Allow access from your home network
+#    0.0.0.0 = WAMS listens on all network addresses of this server, not only locally.
+#    WAMS has no login: every device in your home network can open it.
+#    More protection (one PC only, SSH tunnel, reverse proxy): see SECURITY.md.
+echo 'WAMS_BIND_ADDRESS=0.0.0.0' > .env && chmod 600 .env
+
+# 4. Build and start (the first build takes a few minutes)
+sudo docker compose -p wherearemysats up -d --build
+
+# 5. Check that WAMS is running
+curl -fsS --retry 12 --retry-delay 5 --retry-all-errors http://127.0.0.1:8080/health; echo
+```
+
+`sha256sum -c` must print `OK`; otherwise nothing is unpacked and you should not use
+the download.
+
+**Expected result of step 5:** `{"status":"ok","app":"wherearemysats","version":"0.19.8","db_connected":true}`.
+The first start takes a few seconds (the container shows `health: starting` in
+`sudo docker ps`); the check retries for about a minute. Lines like
+`curl: (7) Failed to connect`, "Connection reset by peer" or "connection refused"
+before the result are normal. If no `"status":"ok"` follows, wait a moment and run the
+`curl` line again.
+
+**6. Open WAMS in your browser** at `http://<vm-ip>:8080`, where `<vm-ip>` is the
+server's address in your home network (`hostname -I` prints it; use the first
+address). Then:
+
+1. Open **Node Settings**, enter the RPC data of your node (host, port, username,
+   password, network), click **Test Connection**, then **Save**. Where to find these
+   values and how to allow the connection on the node: [NODE_SETUP.md](NODE_SETUP.md).
+2. Restart WAMS once so that the saved connection is used everywhere:
+
+   ```bash
+   cd ~/wherearemysats && sudo docker compose -p wherearemysats restart bitcoin-lineage
+   ```
+
+3. Follow the **Getting started** checklist on the Dashboard.
+
+## Update
+
+Read the [release notes](docs/releases/) of the new version first and make a backup
+([Backup and restore](#backup-and-restore)). Then repeat step 2 of the Quick install
+with the new version number, rebuild and check:
+
+```bash
+VERSION=0.19.8        # set the new version here
+BASE=https://github.com/dackelmann21/wherearemysats/releases/download/v$VERSION
+cd ~/wherearemysats
+curl -fsSLO $BASE/wams-public-$VERSION.tar.gz
+curl -fsSLO $BASE/wams-public-$VERSION.tar.gz.sha256
+sha256sum -c wams-public-$VERSION.tar.gz.sha256 && tar -xzf wams-public-$VERSION.tar.gz --strip-components=1
+sudo docker compose -p wherearemysats up -d --build
+curl -fsS --retry 12 --retry-delay 5 --retry-all-errors http://127.0.0.1:8080/health; echo
+```
+
+Your `.env` and your data stay as they are; they are not part of the archive.
+`/health` shows the new version. Reload the browser page with Ctrl+F5. More details:
+[Update details](#update-details).
+
+## Advanced
+
+Everything below is optional or for special cases. Commands in this part use
+placeholders in angle brackets, e.g. `<vm-ip>`: replace them **including the brackets**
+with your own value before you run the command, and do not paste real values into
+public issues.
 
 | Placeholder | Meaning |
 |---|---|
-| `<user>` | Linux user on the WAMS host (with `sudo`) |
-| `<vm-ip>` | LAN address of the WAMS host |
-| `<node-ip>` | LAN address of the Bitcoin Core host |
-| `<rpc-user>` | RPC username of your node |
+| `<user>` | Linux user on the WAMS server (with `sudo`) |
+| `<vm-ip>` | address of the WAMS server in your home network |
+| `<pc-ip>` | address of the computer you open WAMS from |
 | `<lan-cidr>` | your home network in CIDR form, e.g. `192.0.2.0/24` |
-| `<version>` | WAMS release version, e.g. `0.19.7` |
 
-All commands run on the WAMS host unless a step says otherwise. Docker commands use
+All commands run on the WAMS server unless a step says otherwise. Docker commands use
 `sudo`; this guide does not add your user to the `docker` group, because membership
 in that group is equivalent to root access.
 
-## 1. Requirements
+### Requirements in detail
 
-**WAMS host** (recommendation, not a measured minimum):
-
-| Resource | Recommendation |
+| Resource | Recommendation (not a measured minimum) |
 |---|---|
-| OS | Ubuntu Server LTS (24.04 tested), 64-bit |
+| OS | Ubuntu Server LTS (24.04 tested), 64-bit; other Linux distributions work with Docker installed their own way |
 | CPU | 2 vCPU |
 | RAM | 4 GB (2 GB works for small datasets; large report/export runs peaked near 1 GB in synthetic benchmarks) |
 | Disk | 20 GB, local and persistent (do not put the SQLite database on a network file system) |
-| Network | a fixed LAN address (static or DHCP reservation); **internet access while building** the image (Docker packages, base image `python:3.11-slim`, Python packages) |
+| Network | a fixed address in your home network (static or DHCP reservation); **internet access while building** the image (Docker packages, base image `python:3.11-slim`, Python packages) |
+| Docker | Docker Engine 20.10 or newer and the Docker Compose **plugin 2.24 or newer** (`docker compose`, not the old `docker-compose`) |
 
-**Software:** Docker Engine 20.10 or newer and the Docker Compose **plugin 2.24 or
-newer** (`docker compose`, not the old `docker-compose`).
+The node can run on the same server or on another machine in your home network.
 
-**Bitcoin node:** Bitcoin Core 31.1 or newer with `txindex=1` and
-`txospenderindex=1`, fully synced, reachable over RPC from the WAMS host. See
-[NODE_SETUP.md](NODE_SETUP.md). WAMS does not run a node itself.
+### Install Docker with apt
 
-WAMS runs on the host itself; the node can run on the same host or on another machine
-in your LAN.
-
-## 2. Prepare the host
-
-### 2.1 User and SSH
-
-If the installer did not create one, add a user with `sudo` (at the console):
-
-```bash
-sudo adduser <user>
-sudo usermod -aG sudo <user>
-```
-
-Install the SSH server (often already present on Ubuntu Server) and note the address:
-
-```bash
-sudo apt-get update
-sudo apt-get install -y openssh-server
-sudo systemctl enable --now ssh
-ip -4 addr show | grep inet        # note <vm-ip>
-```
-
-From **your own computer**, set up key login and test it:
-
-```bash
-ls ~/.ssh/id_ed25519.pub 2>/dev/null || ssh-keygen -t ed25519
-ssh-copy-id <user>@<vm-ip>
-ssh <user>@<vm-ip> 'whoami; sudo -v && echo "sudo ok"'
-```
-
-Optional, after key login works: disable password login on the host. Keep the current
-session open and test a second login before you close it.
-
-```bash
-echo 'PasswordAuthentication no' | sudo tee /etc/ssh/sshd_config.d/10-nopassword.conf
-sudo systemctl reload ssh
-```
-
-### 2.2 Host firewall
-
-Allow SSH only from your LAN:
-
-```bash
-sudo apt-get install -y ufw
-sudo ufw default deny incoming
-sudo ufw default allow outgoing
-sudo ufw allow from <lan-cidr> to any port 22 proto tcp
-sudo ufw enable
-sudo ufw status verbose
-```
-
-**ufw does not protect ports published by Docker.** Docker inserts its own packet
-filter rules that are evaluated before ufw. By default WAMS is published on
-`127.0.0.1` only, so this does not matter yet. If you open WAMS to the LAN, use the
-`DOCKER-USER` rule in [SECURITY.md](SECURITY.md#variant-b-lan-access-opt-in).
-Never forward the WAMS port on your router.
-
-## 3. Install Docker
-
-These commands use Docker's official Ubuntu repository. For other distributions see
-<https://docs.docker.com/engine/install/>.
+Instead of the script in step 1 you can install Docker from Docker's official Ubuntu
+repository. For other distributions see <https://docs.docker.com/engine/install/>.
 
 ```bash
 sudo apt-get update
@@ -125,7 +134,7 @@ sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plug
 sudo systemctl enable --now docker
 ```
 
-Check the result:
+Check the result (either installation method):
 
 ```bash
 systemctl is-enabled docker        # enabled
@@ -136,189 +145,167 @@ printf '%s\n2.24.0\n' "${v#v}" | sort -V -C -r && echo "OK (>= 2.24)" || echo "T
 
 Docker must start at boot (`enabled`); WAMS needs no systemd unit of its own.
 
-## 4. Get WAMS
+### Server user, SSH and firewall (optional)
 
-This guide uses the directory `~/wherearemysats` and the Compose project name
-**`wherearemysats`**. Always pass `-p wherearemysats` to `docker compose`: the data
-volume is named after the project (`wherearemysats_lineage-data`), so the same name
-finds the same data even if you later move or rename the directory.
+Hardening for the server. WAMS works without it.
 
-### Option A: release archive (recommended)
-
-Download the archive `wams-public-<version>.tar.gz` and its checksum file
-`wams-public-<version>.tar.gz.sha256` from the [Releases page](https://github.com/dackelmann21/wherearemysats/releases), on the
-host itself (`curl -LO <url>`) or on your computer and then copied over:
+If the Ubuntu installer did not create one, add a user with `sudo` (at the console):
 
 ```bash
-# on your computer, only if you downloaded there
-scp wams-public-<version>.tar.gz wams-public-<version>.tar.gz.sha256 <user>@<vm-ip>:~
+sudo adduser <user>
+sudo usermod -aG sudo <user>
 ```
 
-On the host, check and unpack:
+Install the SSH server (often already present on Ubuntu Server):
 
 ```bash
-cd ~
-sha256sum -c wams-public-<version>.tar.gz.sha256      # must print: OK
-test ! -e ~/wherearemysats || echo "STOP: ~/wherearemysats already exists (see section 9 for updates)"
-install -d -m 755 ~/wherearemysats
-tar -xzf wams-public-<version>.tar.gz -C ~/wherearemysats --strip-components=1
-cd ~/wherearemysats
-grep APP_VERSION backend/version.py                    # shows <version>
+sudo apt-get update
+sudo apt-get install -y openssh-server
+sudo systemctl enable --now ssh
 ```
 
-If `sha256sum -c` does not print `OK`, do not use the archive.
+**Key login, from your own computer** (Linux or macOS):
 
-### Option B: Git
+```bash
+ls ~/.ssh/id_ed25519.pub 2>/dev/null || ssh-keygen -t ed25519
+ssh-copy-id <user>@<vm-ip>
+ssh <user>@<vm-ip> 'whoami; sudo -v && echo "sudo ok"'
+```
+
+On **Windows** (PowerShell; `ssh` and `ssh-keygen` are built in, `ssh-copy-id` is not):
+
+```powershell
+ssh-keygen -t ed25519
+type $env:USERPROFILE\.ssh\id_ed25519.pub | ssh <user>@<vm-ip> "mkdir -p ~/.ssh && chmod 700 ~/.ssh && cat >> ~/.ssh/authorized_keys && chmod 600 ~/.ssh/authorized_keys"
+ssh <user>@<vm-ip> "whoami; sudo -v && echo sudo-ok"
+```
+
+After key login works you can disable password login on the server. Keep the current
+session open and test a second login before you close it:
+
+```bash
+echo 'PasswordAuthentication no' | sudo tee /etc/ssh/sshd_config.d/10-nopassword.conf
+sudo systemctl reload ssh
+```
+
+**Host firewall:** allow SSH only from your home network:
+
+```bash
+sudo apt-get install -y ufw
+sudo ufw default deny incoming
+sudo ufw default allow outgoing
+sudo ufw allow from <lan-cidr> to any port 22 proto tcp
+sudo ufw enable
+sudo ufw status verbose
+```
+
+**ufw does not protect ports published by Docker.** Docker inserts its own packet
+filter rules that are evaluated before ufw, so ufw neither blocks nor allows the WAMS
+port. To limit who reaches WAMS, use the `DOCKER-USER` rule in
+[SECURITY.md](SECURITY.md#variant-b-lan-access-opt-in). Never forward the WAMS port on
+your router.
+
+### Alternative to the release archive: Git
+
+Use this **instead of step 2** of the Quick install, not in addition. Git needs an
+empty or new directory; if you already unpacked the archive into `~/wherearemysats`,
+stay with the archive.
 
 ```bash
 sudo apt-get install -y git
 git clone https://github.com/dackelmann21/wherearemysats.git ~/wherearemysats
 cd ~/wherearemysats
-git tag --list                    # release tags
-git checkout v<version>           # use a release tag, not an arbitrary branch state
+git checkout v0.19.8              # a release tag, not an arbitrary branch state
 ```
 
-## 5. Configure `.env` (optional)
+Then continue with step 3. To update: `git fetch --tags && git checkout v<new-version>`,
+then `up -d --build` as in [Update](#update).
 
-WAMS starts without a `.env` file. You need one only to change the published address
-or port, to allow a host name, or to configure the node through environment
-variables instead of the Node Settings page.
+Which version is unpacked or checked out:
+
+```bash
+grep '^APP_VERSION' ~/wherearemysats/backend/version.py
+```
+
+### Configuration file `.env`
+
+`.env` in `~/wherearemysats` is needed for access from another computer
+(`WAMS_BIND_ADDRESS`, step 3 of the Quick install). It is **not** needed for the node
+connection: enter that in **Node Settings**. Edit it with an editor, never with real
+secrets on the command line, and keep it at `chmod 600`:
 
 ```bash
 cd ~/wherearemysats
-( umask 077 && cp -n .env.example .env )
+nano .env
 chmod 600 .env
-nano .env        # enter real values only in the editor, never on the command line
+sudo docker compose -p wherearemysats up -d       # apply changes; a plain restart does not reload .env
 ```
 
-> **LAN access needs `.env`.** Without a `.env` containing `WAMS_BIND_ADDRESS=0.0.0.0`
-> (or the host's LAN address), WAMS listens only on `127.0.0.1` of the host (default
-> since 0.19.3). A browser on another computer in the LAN then reports "connection
-> refused"; only the SSH tunnel (section 6) works. If you want to open WAMS directly
-> as `http://<vm-ip>:8080`, set `WAMS_BIND_ADDRESS` here and read
-> [SECURITY.md](SECURITY.md#variant-b-lan-access-opt-in) first.
+`.env.example` lists all variables with comments.
 
 | Variable | Default | Purpose |
 |---|---|---|
-| `WAMS_BIND_ADDRESS` | `127.0.0.1` | Host address the web port is published on. `127.0.0.1` = only this host (SSH tunnel or local reverse proxy). `0.0.0.0` = all interfaces (LAN access). **WAMS has no login: everyone who reaches the port can read and change all data, including the node connection.** See [SECURITY.md](SECURITY.md). |
-| `WAMS_HTTP_PORT` | `8080` | Host port. Change it if 8080 is already in use. |
+| `WAMS_BIND_ADDRESS` | `127.0.0.1` | Address **of this server** on which the web port is published. `127.0.0.1` = only this server (SSH tunnel or local reverse proxy). `0.0.0.0` = all addresses of this server (home network). See below. |
+| `WAMS_HTTP_PORT` | `8080` | Port on the server. Change it if 8080 is already in use; then use the new port in all URLs. |
 | `WAMS_ALLOWED_HOSTS` | empty | Host names (besides IP addresses and `localhost`) under which you open WAMS, comma-separated, e.g. a reverse-proxy name. Other names get HTTP 400. |
-| `BTC_RPC_HOST`, `BTC_RPC_PORT`, `BTC_RPC_USER`, `BTC_RPC_PASSWORD`, `BTC_NETWORK`, `BTC_RPC_TLS` | empty, 8332, empty, empty, `mainnet`, `0` | Node connection from the environment. Leave them empty and use **Node Settings** in the app (section 7) unless you run headless. |
+| `BTC_RPC_HOST`, `BTC_RPC_PORT`, `BTC_RPC_USER`, `BTC_RPC_PASSWORD`, `BTC_NETWORK`, `BTC_RPC_TLS` | empty, 8332, empty, empty, `mainnet`, `0` | Node connection from the environment. Leave them empty and use **Node Settings** unless you run headless. |
 
-Recommendation: keep the RPC fields empty and enter the connection in Node Settings.
-Values in `.env` are visible to everyone who can run `docker inspect` on the host; the
-Node Settings file is stored with mode 0600 inside the data volume.
+**About `WAMS_BIND_ADDRESS`:**
 
-Notes:
+- It is an address of **this server** (`127.0.0.1`, the server's own address
+  `<vm-ip>`, or `0.0.0.0`), **not** the address of the computer you browse from.
+  Entering your PC's address makes Docker fail to start the container.
+- WAMS has **no login**: everyone who reaches the port can read and change all data,
+  including the node connection. To allow only one computer, keep `0.0.0.0` (or
+  `<vm-ip>`) and add a firewall rule in Docker's `DOCKER-USER` chain
+  ([SECURITY.md](SECURITY.md#variant-b-lan-access-opt-in)).
+- Without `.env`, WAMS listens only on `127.0.0.1` of the server; open it then through
+  an SSH tunnel from your computer, `ssh -N -L 8080:127.0.0.1:8080 <user>@<vm-ip>`,
+  and browse to <http://127.0.0.1:8080>
+  ([SECURITY.md](SECURITY.md#variant-a-localhost-only-with-ssh-tunnel-recommended)).
+- If you set **one specific address** (e.g. `<vm-ip>`), WAMS no longer answers on
+  `127.0.0.1`; use `http://<vm-ip>:8080` in the check commands of this guide. With
+  `0.0.0.0` the `127.0.0.1` commands keep working.
 
-- Saved Node Settings (`/app/data/node-settings.json`) override **all** `BTC_RPC_*`
-  values together. Environment values are used only when nothing is saved.
-- For a password containing `$`, put the value in single quotes in `.env`.
-- After changing `.env`, run `up -d` again (section 6). A plain `restart` does not
-  reload the environment.
-- If you set `WAMS_BIND_ADDRESS` to **one specific address** (e.g. `<vm-ip>`), WAMS no
-  longer answers on `127.0.0.1`. Replace `http://127.0.0.1:8080` with
-  `http://<vm-ip>:8080` in every check command of this guide. With `0.0.0.0` the
-  `127.0.0.1` commands keep working.
+**Node connection in `.env`:** keep the RPC fields empty and use Node Settings.
+Values in `.env` are visible to everyone who can run `docker inspect` on the server;
+the Node Settings file is stored with mode 0600 inside the data volume. Saved Node
+Settings (`/app/data/node-settings.json`) override **all** `BTC_RPC_*` values
+together; environment values are used only when nothing is saved. For a password
+containing `$`, put the value in single quotes.
 
-## 6. Build and start
+**Host names and reverse proxy:** to open WAMS under a name instead of an IP address,
+add the name to `WAMS_ALLOWED_HOSTS`. For a reverse proxy with TLS and a password,
+see [SECURITY.md](SECURITY.md#variant-c-reverse-proxy-with-login).
 
-```bash
-cd ~/wherearemysats
-sudo docker compose -p wherearemysats config --quiet
-sudo docker compose -p wherearemysats up -d --build
-sudo docker compose -p wherearemysats ps
-curl -fsS --retry 12 --retry-delay 5 --retry-connrefused http://127.0.0.1:8080/health; echo
-```
-
-Expected health answer (the version is the one you installed):
-
-```json
-{"status":"ok","app":"wherearemysats","version":"<version>","db_connected":true}
-```
-
-The first build takes several minutes. `/health` does not depend on the node, so it is
-`ok` before a node is configured. Check the database line in the log:
-
-```bash
-sudo docker compose -p wherearemysats logs bitcoin-lineage | grep -E 'database ready|schema version'
-```
-
-Expected: `database ready at /app/data/lineage.db (schema version <n>)`, where `<n>` is
-the schema of your release (25 for 0.19.x), and no `schema version mismatch`.
-
-Optional permission and integrity check (prints metadata only, never secrets):
-
-```bash
-sudo docker compose -p wherearemysats exec -T bitcoin-lineage python - <<'PY'
-import sqlite3, stat
-from pathlib import Path
-for p in (Path('/app/data'), Path('/app/data/lineage.db'), Path('/app/data/node-settings.json')):
-    if p.exists():
-        s = p.stat()
-        print(p.name, 'uid/gid', s.st_uid, s.st_gid, 'mode', oct(stat.S_IMODE(s.st_mode)))
-c = sqlite3.connect('file:/app/data/lineage.db?mode=ro', uri=True)
-print('schema', c.execute('PRAGMA user_version').fetchone()[0])
-print('integrity', c.execute('PRAGMA integrity_check').fetchone()[0])
-c.close()
-PY
-```
-
-Expected: `data` mode `0o700`, files `0o600`, uid/gid `10001 10001`, `integrity ok`.
-
-The container uses the restart policy `unless-stopped`: it comes back after a reboot
-of the host **unless you stopped it by hand** (`docker compose stop`). After a manual
-stop, start it again with `up -d`.
-
-### Open the web interface
-
-With the default `WAMS_BIND_ADDRESS=127.0.0.1`, WAMS is reachable only on the host.
-From your computer, open an SSH tunnel and keep it running:
-
-```bash
-ssh -N -L 8080:127.0.0.1:8080 <user>@<vm-ip>
-```
-
-Then open <http://127.0.0.1:8080> in your browser. With LAN access enabled (see
-[SECURITY.md](SECURITY.md)), open `http://<vm-ip>:8080` instead.
-
-## 7. Connect the node
+### Connect the node in detail
 
 Prepare the node first ([NODE_SETUP.md](NODE_SETUP.md)) and run the RPC test from the
-WAMS host described there. Then, in WAMS:
+WAMS server described there. In **Node Settings**:
 
-1. Open **Node Settings**.
-2. Enter RPC Host (address or DNS name only, no `http://`, no path), RPC Port (mainnet
-   8332), RPC Username, RPC Password and the Bitcoin Network. Leave **HTTPS to RPC**
-   off unless you use a TLS proxy in front of Core.
-3. Click **Test Connection**. Expected: network, block height, "Initial block
-   download: No".
-4. Click **Save**.
-5. Restart WAMS so that all workers use the saved connection:
+- **RPC Host** is an address or DNS name only (no `http://`, no path); **RPC Port** is
+  8332 for mainnet. Leave **HTTPS to RPC** off unless you use a TLS proxy in front of
+  Core.
+- **Test Connection** shows network, block height and "Initial block download: No".
+  It never changes the active connection.
+- **Save** takes effect after `sudo docker compose -p wherearemysats restart
+  bitcoin-lineage` (step 6 of the Quick install). Then **Node Status** shows:
+  connected, expected network, blockchain synced, `txindex` and `txospenderindex`
+  synced.
+- A blank password field keeps the saved password only while host, port, username and
+  TLS stay the same.
+- A node running on the **same server** is not `localhost` from inside the container;
+  use `host.docker.internal` as RPC host
+  ([NODE_SETUP.md](NODE_SETUP.md#5-core-on-the-same-host)).
 
-   ```bash
-   cd ~/wherearemysats
-   sudo docker compose -p wherearemysats restart bitcoin-lineage
-   curl -fsS --retry 12 --retry-delay 5 --retry-connrefused http://127.0.0.1:8080/health; echo
-   ```
-
-6. Open **Node Status**: connected, expected network, blockchain synced, `txindex` and
-   `txospenderindex` synced.
-
-A node running on the **same host** is not `localhost` from inside the container; use
-`host.docker.internal` as RPC host (see [NODE_SETUP.md](NODE_SETUP.md#5-core-on-the-same-host)).
-
-Test Connection never changes the active connection. A blank password field keeps the
-saved password only while host, port, username and TLS stay the same.
-
-## 8. First steps
+### First steps in the app
 
 The **Dashboard** shows a **Getting started** checklist. It is complete when these
 steps are done:
 
 | Step | Where |
 |---|---|
-| Node connected | Node Settings (section 7) |
+| Node connected | Node Settings |
 | Blockchain synced | Bitcoin Core; WAMS waits for the end of the initial block download |
 | txindex enabled and synced | `bitcoin.conf`, see [NODE_SETUP.md](NODE_SETUP.md) |
 | txospenderindex enabled and synced | `bitcoin.conf`, see [NODE_SETUP.md](NODE_SETUP.md) |
@@ -355,60 +342,70 @@ Exit** at the acquisition. On the Dashboard, **Export CSV** opens the export dia
 choose the years and click **Blockchain History Report** for a printable page (save it
 as PDF with Ctrl+P). It documents on-chain history; it is not a tax report.
 
-## 9. Update
+### Checks after the start
 
-1. Read the release notes of every version between yours and the new one. Releases
-   that change the database schema say so.
-2. Make a backup (section 10). Let running scans and imports finish.
+`/health` does not depend on the node, so it is `ok` before a node is configured.
+Container state and database line in the log:
 
-   > **Updating from a version before 0.19.3 with LAN access?** Since 0.19.3 the web
-   > port is published only on `127.0.0.1` unless `.env` sets `WAMS_BIND_ADDRESS`.
-   > Before, no `.env` was needed if you configured the node in the app. Create `.env`
-   > now if necessary (section 5) and set `WAMS_BIND_ADDRESS=0.0.0.0`; otherwise the
-   > browser in the LAN reports "connection refused" after the update.
+```bash
+cd ~/wherearemysats
+sudo docker compose -p wherearemysats ps
+sudo docker compose -p wherearemysats logs bitcoin-lineage | grep -E 'database ready|schema version'
+```
 
-3. Get the new version:
+Expected: `database ready at /app/data/lineage.db (schema version <n>)`, where `<n>` is
+the schema of your release (25 for 0.19.x), and no `schema version mismatch`.
 
-   - **Archive:** download and check the new archive as in section 4, then unpack it
-     over the existing directory. `.env` and the data volume are not part of the
-     archive and stay as they are.
+Optional permission and integrity check (prints metadata only, never secrets):
 
-     ```bash
-     cd ~
-     sha256sum -c wams-public-<version>.tar.gz.sha256
-     tar -xzf wams-public-<version>.tar.gz -C ~/wherearemysats --strip-components=1
-     ```
+```bash
+sudo docker compose -p wherearemysats exec -T bitcoin-lineage python - <<'PY'
+import sqlite3, stat
+from pathlib import Path
+for p in (Path('/app/data'), Path('/app/data/lineage.db'), Path('/app/data/node-settings.json')):
+    if p.exists():
+        s = p.stat()
+        print(p.name, 'uid/gid', s.st_uid, s.st_gid, 'mode', oct(stat.S_IMODE(s.st_mode)))
+c = sqlite3.connect('file:/app/data/lineage.db?mode=ro', uri=True)
+print('schema', c.execute('PRAGMA user_version').fetchone()[0])
+print('integrity', c.execute('PRAGMA integrity_check').fetchone()[0])
+c.close()
+PY
+```
 
-     Unpack with your normal umask (usually `022`). Under a restrictive umask such as
-     `077` the extracted files are readable only by you, and the container user cannot
-     read the sources copied into the image.
+Expected: `data` mode `0o700`, files `0o600`, uid/gid `10001 10001`, `integrity ok`.
 
-     Unpacking over the directory does not delete files that a new version removed.
-     For a clean tree, unpack into a new empty directory instead, copy `.env` over
-     (`cp -p ~/wherearemysats/.env <new-directory>/`), and keep using
-     `-p wherearemysats`; the data belongs to the project name, not to the directory.
+Always pass `-p wherearemysats` to `docker compose`: the data volume is named after
+the project (`wherearemysats_lineage-data`), so the same name finds the same data even
+if you later move or rename the directory. The container uses the restart policy
+`unless-stopped`: it comes back after a reboot of the server **unless you stopped it
+by hand** (`docker compose stop`). After a manual stop, start it again with `up -d`.
 
-   - **Git:** `git fetch --tags && git checkout v<version>`.
+### Update details
 
-4. Rebuild and start:
+- Releases that change the database schema say so in their release notes. Let running
+  scans and imports finish before you update.
+- **Database migrations run automatically at start.** They are forward-only and keep
+  existing data. WAMS starts only if the database ends at exactly the schema version
+  the program expects; otherwise it stops with `schema version mismatch` and does not
+  change the database. This also happens when you start an **older** WAMS on a
+  database that a newer version already migrated. A downgrade after a schema change is
+  therefore only possible by restoring the backup made before the update.
+- **Updating from a version before 0.19.3 with access from your home network?** Since
+  0.19.3 the web port is published only on `127.0.0.1` unless `.env` sets
+  `WAMS_BIND_ADDRESS`. Create `.env` as in step 3 of the Quick install; otherwise the
+  browser on another computer reports "connection refused" after the update.
+- Unpack with your normal umask (usually `022`). Under a restrictive umask such as
+  `077` the extracted files are readable only by you, and the container user cannot
+  read the sources copied into the image.
+- Unpacking over the directory does not delete files that a new version removed. For a
+  clean tree, unpack into a new empty directory instead, copy `.env` over
+  (`cp -p ~/wherearemysats/.env <new-directory>/`), and keep using
+  `-p wherearemysats`; the data belongs to the project name, not to the directory.
+- You can delete old `wams-public-*.tar.gz` files in `~/wherearemysats` after a
+  successful update.
 
-   ```bash
-   cd ~/wherearemysats
-   sudo docker compose -p wherearemysats up -d --build
-   curl -fsS --retry 12 --retry-delay 5 --retry-connrefused http://127.0.0.1:8080/health; echo
-   ```
-
-5. Check that `/health` shows the new version, reload the browser page with Ctrl+F5 and
-   check the version next to the WhereAreMySats logo in the top bar. Open Node Status.
-
-**Database migrations run automatically at start.** They are forward-only and keep
-existing data. WAMS starts only if the database ends at exactly the schema version the
-program expects; otherwise it stops with `schema version mismatch` and does not change
-the database. This also happens when you start an **older** WAMS on a database that a
-newer version already migrated. A downgrade after a schema change is therefore only
-possible by restoring the backup made before the update.
-
-## 10. Backup and restore
+### Backup and restore
 
 The database contains your complete history: addresses, wallet names, labels, notes,
 amounts and derivation data. The data volume also holds `node-settings.json` with the
@@ -417,13 +414,13 @@ encrypted, never in Git, cloud chat or issue trackers.
 
 Use both:
 
-1. **VM snapshot** of the whole host (your hypervisor's snapshot or backup function),
-   e.g. before every update. It contains the database and the RPC password; keep
-   snapshots on encrypted storage.
+1. **VM snapshot** of the whole server (your hypervisor's snapshot or backup
+   function), e.g. before every update. It contains the database and the RPC
+   password; keep snapshots on encrypted storage.
 2. **Database copy while WAMS keeps running**, made with SQLite's backup API from a
    helper container that mounts the data volume read-only.
 
-### Database copy
+#### Database copy
 
 ```bash
 cd ~/wherearemysats
@@ -441,14 +438,15 @@ chmod 600 ~/wams-backups/lineage-$STAMP.db
 
 Expected output: `integrity ok schema <n>`. If a previous run failed, remove the
 leftover helper first with `sudo docker rm wams-backup`. The copy contains the
-database only, not the Node Settings; after a restore on a new host, enter the node
+database only, not the Node Settings; after a restore on a new server, enter the node
 connection again. Move the copy to encrypted storage.
 
-### Restore
+#### Restore
 
 Restore replaces the current database. The current files are kept next to it with the
 suffix `.pre-restore-<time>`. A backup from an **older** schema is migrated forward at
-start; a backup from a **newer** schema than the installed WAMS is refused (section 9).
+start; a backup from a **newer** schema than the installed WAMS is refused
+([Update details](#update-details)).
 
 ```bash
 cd ~/wherearemysats
@@ -488,22 +486,23 @@ finally:
 PY
 sudo rm -r "$STAGE"
 sudo docker compose -p wherearemysats up -d
-curl -fsS --retry 12 --retry-delay 5 --retry-connrefused http://127.0.0.1:8080/health; echo
+curl -fsS --retry 12 --retry-delay 5 --retry-all-errors http://127.0.0.1:8080/health; echo
 ```
 
 Always finish with `up -d`: after the manual `stop`, the container would otherwise not
 start at the next reboot.
 
-**Moving to another host:** install WAMS on the new host (sections 2 to 6), copy the
+**Moving to another server:** install WAMS on the new server (Quick install), copy the
 backup over a secure channel, restore it there, and enter the node connection in Node
-Settings. Allow the new host's address on the node ([NODE_SETUP.md](NODE_SETUP.md)).
+Settings. Allow the new server's address on the node ([NODE_SETUP.md](NODE_SETUP.md)).
 
-## 11. Troubleshooting
+### Troubleshooting
 
 | Symptom | Cause and fix |
 |---|---|
-| Test Connection: "Cannot reach Bitcoin Core" | Wrong host/port, Core listens only on loopback (`rpcbind`), or a firewall blocks the port. For a node on the same host use `host.docker.internal`. Run the RPC test in [NODE_SETUP.md](NODE_SETUP.md#4-test-from-the-wams-host). |
-| "RPC access forbidden" (HTTP 403 from Core) | The WAMS host's address is missing in `rpcallowip`, or Core was not restarted after the change. |
+| Health check right after the start: "Connection reset by peer" or "connection refused" | WAMS is still starting (`health: starting` in `sudo docker ps`). Wait a few seconds and run the check again. |
+| Test Connection: "Cannot reach Bitcoin Core" | Wrong host/port, Core listens only on loopback (`rpcbind`), or a firewall blocks the port. For a node on the same server use `host.docker.internal`. Run the RPC test in [NODE_SETUP.md](NODE_SETUP.md#4-test-from-the-wams-host). |
+| "RPC access forbidden" (HTTP 403 from Core) | The WAMS server's address is missing in `rpcallowip`, or Core was not restarted after the change. |
 | "RPC authentication failed" (HTTP 401) | Username or password wrong. WAMS needs the plain password, not the `rpcauth` hash line. |
 | "Bitcoin Core did not respond within 10 seconds" | Node overloaded or network path broken; try again, check the node. |
 | "Connected, but Bitcoin network does not match" | The network in Node Settings differs from the node's chain (e.g. signet node, mainnet selected). Use one WAMS database per network. |
@@ -512,7 +511,8 @@ Settings. Allow the new host's address on the node ([NODE_SETUP.md](NODE_SETUP.m
 | Browser shows `Host not allowed` (HTTP 400) | You opened WAMS under a host name. Use the IP address or `localhost`, or add the name to `WAMS_ALLOWED_HOSTS` in `.env` and run `up -d`. |
 | Changes fail with "Use same-origin requests." (HTTP 403) behind a proxy | The reverse proxy does not pass the original `Host` header. See [SECURITY.md](SECURITY.md#variant-c-reverse-proxy-with-login). |
 | `up` fails with "port is already allocated" / "address already in use" | Another service uses 8080 (`sudo ss -ltnp` lists listening ports). Set `WAMS_HTTP_PORT` in `.env` and run `up -d`; use the new port in all URLs. |
-| Not reachable from another computer ("connection refused"), e.g. after an update from a version before 0.19.3 | Expected with the default `WAMS_BIND_ADDRESS=127.0.0.1`. Check with `sudo docker ps`: the column PORTS shows `127.0.0.1:8080->8080/tcp` (only this host) or `0.0.0.0:8080->8080/tcp` (all interfaces). Use the SSH tunnel, or set `WAMS_BIND_ADDRESS=0.0.0.0` in `.env` (section 5; create `.env` if it does not exist) and run `up -d` ([SECURITY.md](SECURITY.md#variant-b-lan-access-opt-in)). |
+| `up` fails with "cannot assign requested address" | `WAMS_BIND_ADDRESS` is not an address of this server (e.g. the address of your PC). Use `0.0.0.0` or the server's own address ([Configuration file `.env`](#configuration-file-env)). |
+| Not reachable from another computer ("connection refused"), e.g. after an update from a version before 0.19.3 | `.env` with `WAMS_BIND_ADDRESS` is missing. Check with `sudo docker ps`: the column PORTS shows `127.0.0.1:8080->8080/tcp` (only this server) or `0.0.0.0:8080->8080/tcp` (all addresses). Create `.env` as in step 3 of the Quick install and run `up -d`, or use the SSH tunnel. |
 | Container restarts repeatedly; log shows `schema version mismatch` | The database is from a newer WAMS version. Install that version again or restore a matching backup. |
 | WAMS shows an empty installation after an update | Compose was started with another project name, so a new empty volume was created. Stop it and start again with `-p wherearemysats`. Do not delete any volume. `sudo docker volume ls` lists them. |
 | WAMS did not come back after a reboot | It was stopped by hand before. Run `sudo docker compose -p wherearemysats up -d`. Check `systemctl is-enabled docker`. |

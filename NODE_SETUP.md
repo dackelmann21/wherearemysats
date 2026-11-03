@@ -152,7 +152,7 @@ filter index`, if enabled) `synced`.
 | an index is missing | add the line to `bitcoin.conf` and restart Core |
 
 Test Connection in **Node Settings** reports the same cases. Continue with
-[INSTALL.md, section 7](INSTALL.md#7-connect-the-node).
+[INSTALL.md, Connect the node in detail](INSTALL.md#connect-the-node-in-detail).
 
 ## 5. Core on the same host
 
@@ -190,19 +190,57 @@ that address (or `host.docker.internal`) as RPC host.
 
 ## 6. Umbrel and Start9
 
-The WAMS project has not tested these platforms in the current release. What WAMS
-needs is the same as above: an RPC host and port reachable from the WAMS host, a
-username and password, the right network, and `txindex` plus `txospenderindex`.
+What WAMS needs is the same as above: an RPC host and port reachable from the WAMS
+host, a username and password, the right network, and `txindex` plus
+`txospenderindex`. The Umbrel steps below were tried on one installation; Start9 is not
+tested by the WAMS project.
 
-- **Umbrel:** the Bitcoin Node app shows its RPC connection details (host, port,
-  username, password) in its connection dialog, and offers index options in its
-  settings. Check whether your version offers `txospenderindex`; WAMS cannot work
-  without it.
-- **Start9 (StartOS):** the Bitcoin Core service shows its RPC credentials and
-  interface addresses, and has index options in its configuration. Check the same
-  points as above.
+### Umbrel
 
-General points for node platforms:
+**RPC credentials, way 1 (no SSH):** open the Bitcoin Node app in the Umbrel web
+interface and look for its connection details; choose the RPC connection. It shows
+host, port, username and password. Names and menus differ between app and umbrelOS
+versions. As RPC host in WAMS, enter the Umbrel's **IP address** in your home network,
+not a `.local` name.
+
+**RPC credentials, way 2 (SSH on the Umbrel):** the Bitcoin container carries them in
+its environment:
+
+```bash
+sudo docker inspect bitcoin_app_1 --format '{{range .Config.Env}}{{println .}}{{end}}' | grep -i rpc
+```
+
+The container name can differ between umbrelOS versions; list it with
+`sudo docker ps --format '{{.Names}}' | grep -i bitcoin` and use that name instead of
+`bitcoin_app_1`. **The output contains the RPC password in plain text:** read it only
+on your own screen; do not copy it into chats, issues or notes, and do not share a
+screenshot.
+
+**Indexes:** the app offers index options in its settings. Check whether your version
+offers `txospenderindex`; WAMS cannot work without it.
+
+**Reachability from the WAMS server:** run the test from
+[section 4](#4-test-from-the-wams-host) on the WAMS server with the Umbrel's IP address
+and the RPC port shown by the app.
+
+- `chain main ... IBD False`: the connection works; nothing to change.
+- HTTP 403: Core on the Umbrel does not accept RPC from the WAMS server. It needs an
+  additional `rpcallowip=<vm-ip>/32` line, i.e. the WAMS server's address only. Where
+  extra Bitcoin Core options are entered depends on the app version (some versions
+  offer a field or file for custom `bitcoin.conf` lines); see the app's settings and
+  Umbrel's documentation. Restart the app afterwards and run the test again.
+- No connection: check that the port shown by the app is the one you test and that no
+  firewall between the two machines blocks it.
+
+Never use `rpcallowip=0.0.0.0/0` or a whole network, and remove the line again when
+WAMS moves to another server.
+
+### Start9 (StartOS)
+
+The Bitcoin Core service shows its RPC credentials and interface addresses, and has
+index options in its configuration. Check the same points as above.
+
+### General points for node platforms
 
 - Enter the node's **IP address** as RPC host. Names like `<name>.local` (mDNS) are
   often not resolvable from inside a Docker container.
@@ -214,7 +252,8 @@ General points for node platforms:
   trusts by default; WAMS has no option to add your own certificate authority, and
   certificate verification cannot be switched off. If a platform offers RPC only over
   HTTPS with its own certificate authority, WAMS cannot connect to that endpoint.
-- WAMS does not need the platform's internal Docker network or container names.
+- For the connection itself, WAMS does not need the platform's internal Docker network
+  or container names.
 
 ## 7. Electrs (optional)
 

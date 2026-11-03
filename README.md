@@ -50,7 +50,8 @@ releases. Read the release notes before every update and keep backups.
 - You need **your own Bitcoin Core node** (31.1 or newer) with `txindex` and
   `txospenderindex`. WAMS uses no public block explorer.
 - **No login.** Everyone who can reach the web interface can read and change all data.
-  By default it is reachable only on the host itself. See [SECURITY.md](SECURITY.md).
+  The Quick install opens it to your home network; for tighter access see
+  [SECURITY.md](SECURITY.md).
 - Wallet features (address import, wallet discovery, inventory) work with **mainnet**
   only. Signet is useful for trying the acquisition-to-report flow
   ([SIGNET.md](SIGNET.md)).
@@ -66,24 +67,16 @@ releases. Read the release notes before every update and keep backups.
 
 ## Quick start
 
-On a Linux host with Docker, after preparing the node, with the archive and its
-checksum file from the [Releases page](https://github.com/dackelmann21/wherearemysats/releases):
-
-```bash
-sha256sum -c wams-public-<version>.tar.gz.sha256
-mkdir ~/wherearemysats && tar -xzf wams-public-<version>.tar.gz -C ~/wherearemysats --strip-components=1
-cd ~/wherearemysats && sudo docker compose -p wherearemysats up -d --build
-ssh -N -L 8080:127.0.0.1:8080 <user>@<host>    # on your computer; then open http://127.0.0.1:8080
-sudo docker compose -p wherearemysats restart bitcoin-lineage    # after Node Settings → Test Connection → Save
-```
-
-Then follow the **Getting started** checklist on the Dashboard.
+On a fresh Ubuntu Server, the [Quick install in INSTALL.md](INSTALL.md#quick-install)
+is one block to copy and paste: it installs Docker, downloads and checks the release,
+and starts WAMS. Then open `http://<vm-ip>:8080`, enter your node in **Node Settings**
+and follow the **Getting started** checklist on the Dashboard.
 
 ## Documentation
 
 | Document | Content |
 |---|---|
-| [INSTALL.md](INSTALL.md) | Installation, first steps, updates, backup and restore, troubleshooting |
+| [INSTALL.md](INSTALL.md) | Quick install, update, advanced setup, backup and restore, troubleshooting |
 | [NODE_SETUP.md](NODE_SETUP.md) | Bitcoin Core requirements and RPC access, Umbrel, Start9 |
 | [SECURITY.md](SECURITY.md) | Security model, access variants, reporting a vulnerability |
 | [SIGNET.md](SIGNET.md) | Trying WAMS on signet |

@@ -5,4 +5,4 @@ served index.html is appended with ``?v=<APP_VERSION>``) and the in-page brand
 label.  Bump this value on every user-visible release.
 """
 
-APP_VERSION = "0.19.7"
+APP_VERSION = "0.19.8"

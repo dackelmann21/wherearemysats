@@ -24,8 +24,10 @@ below.
 
 ### Variant A: localhost only with SSH tunnel (recommended)
 
-This is the default. `compose.yaml` publishes WAMS on `127.0.0.1` of the host only
-(`WAMS_BIND_ADDRESS=127.0.0.1`). Nothing in your LAN can reach it. From your computer:
+This is the default without `.env`. `compose.yaml` publishes WAMS on `127.0.0.1` of the
+host only (`WAMS_BIND_ADDRESS=127.0.0.1`). Nothing in your LAN can reach it. To use it
+after the Quick install, delete the line `WAMS_BIND_ADDRESS=0.0.0.0` from `.env` and run
+`sudo docker compose -p wherearemysats up -d`. From your computer:
 
 ```bash
 ssh -N -L 8080:127.0.0.1:8080 <user>@<vm-ip>
@@ -36,12 +38,16 @@ the host. A VPN to the host works the same way.
 
 ### Variant B: LAN access (opt-in)
 
-Set in `.env` on the WAMS host and apply with
-`sudo docker compose -p wherearemysats up -d`:
+This is what the Quick install in [INSTALL.md](INSTALL.md) sets up. Set in `.env` on the
+WAMS host and apply with `sudo docker compose -p wherearemysats up -d`:
 
 ```ini
-WAMS_BIND_ADDRESS=<vm-ip>      # only the LAN interface; or 0.0.0.0 for all interfaces
+WAMS_BIND_ADDRESS=0.0.0.0      # all addresses of the WAMS host; or <vm-ip> for one interface
 ```
+
+`WAMS_BIND_ADDRESS` is an address **of the WAMS host** on which it listens, **not** the
+address of the computer you browse from. It cannot limit access to one computer; use the
+`DOCKER-USER` rule below for that.
 
 Then every device in your LAN that reaches `http://<vm-ip>:8080` is an operator,
 including guest devices, smart-home devices and any compromised computer. Use this
@@ -59,7 +65,8 @@ sudo iptables -I DOCKER-USER -p tcp -m conntrack --ctdir ORIGINAL --ctorigdstpor
 sudo iptables -L DOCKER-USER -n -v
 ```
 
-This drops connections to host port 8080 from outside `<lan-cidr>`. The rule is not
+This drops connections to host port 8080 from outside `<lan-cidr>`. To allow **only one
+computer**, use its address as `<pc-ip>/32` instead of `<lan-cidr>`. The rule is not
 persistent: re-apply it after each reboot (e.g. with a small systemd unit that runs
 after `docker.service`) or use your firewall tool's `DOCKER-USER` support. Verify the
 result from an allowed device and from a device outside the subnet (e.g. guest Wi-Fi):
@@ -135,7 +142,7 @@ wams.example {
   It is not encrypted.
 - **Backups and VM snapshots contain all of this, including the RPC password.** Store
   them encrypted and never in Git, chat tools or issue trackers. See
-  [INSTALL.md, section 10](INSTALL.md#10-backup-and-restore).
+  [INSTALL.md, Backup and restore](INSTALL.md#backup-and-restore).
 - Use a dedicated RPC user for WAMS with narrow `rpcallowip` entries
   ([NODE_SETUP.md](NODE_SETUP.md#3-configure-bitcoin-core)).
 

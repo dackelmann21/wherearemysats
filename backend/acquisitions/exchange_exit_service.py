@@ -187,8 +187,8 @@ def _derive_suggested_exit_date(block_time: Any) -> str | None:
     the CONFIRMED block that contains the spending transaction.
 
     The Exchange Exit boundary is the spending transaction of the last relevant
-    self-custody source (REQUIREMENTS.md 8.3), so the spending transaction's own
-    block date is the only blockchain-derived date that may be proposed. The
+    self-custody source, so the spending transaction's own block date is the
+    only blockchain-derived date that may be proposed. The
     acquisition/purchase date, the later spend of the exchange output and the
     current system time are all explicitly NOT used.
 
