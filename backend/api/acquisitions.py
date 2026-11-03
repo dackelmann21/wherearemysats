@@ -102,7 +102,7 @@ _POSITION_STATES = {
 
 
 # ---------------------------------------------------------------------------
-# Acquisitions (ACQUISITION_TRACKING_V1_REQUIREMENTS.md)
+# Acquisitions
 #
 # User-declared Acquisition provenance anchored to an exact on-chain
 # outpoint. Saving one automatically creates + runs a normal forward provenance
@@ -268,7 +268,7 @@ async def disposal_candidates_endpoint(acq_id: int) -> list[DisposalCandidate]:
 
 
 # ---------------------------------------------------------------------------
-# Disposals (ACQUISITION_REVIEW_AND_DISPOSALS_V1_REQUIREMENTS.md)
+# Disposals
 #
 # Economic disposal records: a Disposal is a SALE of BTC allocated from one or
 # more Acquisitions. Blockchain evidence is optional and verified, but SPENT is
@@ -312,7 +312,7 @@ async def delete_disposal_endpoint(disposal_id: int) -> Response:
 
 
 # ---------------------------------------------------------------------------
-# Exchange Exits (EXCHANGE_EXIT_REQUIREMENTS.md / v0.11.0)
+# Exchange Exits
 #
 # The user-confirmed blockchain boundary where BTC leaves self-custody toward
 # an exchange. SPENT != SOLD: an exit is (a) transaction facts (sources,

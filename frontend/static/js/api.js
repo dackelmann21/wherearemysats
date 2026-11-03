@@ -129,7 +129,7 @@ window.API = (function () {
       }),
     resetCustodialSuggestion: (id, txid, vout) =>
       request("/api/traces/" + encodeURIComponent(id) + "/custodial-suggestions/" + encodeURIComponent(txid) + "/" + encodeURIComponent(vout) + "/decline", "DELETE"),
-    // Wallet discovery (WALLET_XPUB_DISCOVERY_REQUIREMENTS.md).
+    // Wallet discovery.
     discoveryPlan: (payload) => request("/api/discovery/plan", "POST", payload),
     discoveryPreview: (payload) => request("/api/discovery/preview", "POST", payload),
     discoveryRun: (payload) => request("/api/discovery/run", "POST", payload),

@@ -598,7 +598,7 @@ class TraceEngine:
         elif out.address and await data.is_known_address(out.address):
             # Auto-OWNED via the Known Address Registry (REQ 34/40/47 +
             # REQ 43). The classification source now reflects WHY the
-            # address is owned (WALLET_XPUB_DISCOVERY_REQUIREMENTS.md):
+            # address is owned:
             #   * address found by wallet discovery -> XPUB_DISCOVERY
             #   * address imported into the registry -> MANUAL_IMPORT
             #   * user confirmed ownership          -> USER_CONFIRMED
@@ -990,7 +990,7 @@ class TraceEngine:
 
     async def _detect_ownership_custody_conflicts(self, trace_id: int) -> None:
         """Reconcile confirmed custodial boundaries against direct ownership
-        evidence (WALLET_XPUB_DISCOVERY_REQUIREMENTS.md, real-node field case).
+        evidence (real-node field case).
 
         For every confirmed boundary whose address now has direct ownership
         evidence (MANUAL_IMPORT / XPUB_DISCOVERY / USER_CONFIRMED) a PENDING
@@ -1144,7 +1144,7 @@ class TraceEngine:
         ]
 
         # Persist provenance + topology for every output of the spending
-        # transaction (MIXED_PROVENANCE_BATCH_REQUIREMENTS.md). Topology and
+        # transaction. Topology and
         # batch structure are whole-transaction facts; provenance is per output
         # and depends on which outputs of THIS trace are owned. Topology must
         # never feed custody detection - it only explains the shape.

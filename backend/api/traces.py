@@ -247,8 +247,7 @@ async def reverse_address_outputs(address: str) -> AddressDiscoveryResult:
     )
 
 
-# Persistent address-discovery scan lifecycle (REVERSE_ADDRESS_DISCOVERY_
-# LIFECYCLE_FIX_REQUIREMENTS.md). A reverse-mode address -> outputs discovery is
+# Persistent address-discovery scan lifecycle. A reverse-mode address -> outputs discovery is
 # a durable job the browser polls. Bitcoin Core's ``scanblocks start`` is
 # SYNCHRONOUS (it returns only after the scan completes/aborts), so the manager
 # runs it in a background task and the endpoints only ever touch
@@ -934,7 +933,7 @@ async def _enrich_input_context(
 ) -> None:
     """Attach per-input merge/consolidation context to trace transactions.
 
-    MERGE_INPUT_CONTEXT_AND_GRAPH_RENDERER_FIX_REQUIREMENTS.md Part A. For
+    Merge / consolidation input context. For
     every non-coinbase input of every traced transaction, expose the exact
     input UTXO (``prev_txid:vout`` is already on ``InputInfo``), the ownership
     state of the referenced previous output, and a display-only role:
@@ -1129,7 +1128,7 @@ async def _build_full_trace(
     # owned frontier, never all displayed UNKNOWN outputs or a sticky historical
     # NEEDS_CLASSIFICATION flag. Persist so list/detail/export agree.
     #
-    # Blockchain Analysis (BLOCKCHAIN_ANALYSIS_MODE_REQUIREMENTS.md) has its
+    # Blockchain Analysis has its
     # own status semantics: COMPLETE / ANALYSIS_LIMIT_REACHED / ERROR are
     # decided and persisted by the analysis walker. Its graph is deliberately
     # ownership-agnostic, so the forward ownership-frontier
@@ -1306,8 +1305,7 @@ async def _compute_summary(
         for o in t.outputs:
             outpoint_by_key[f"{o.txid}:{o.vout}"] = o
 
-# Reverse modes (REVERSE_PROVENANCE_REQUIREMENTS_v0.6.0.md /
-    # REVERSE_BLOCKCHAIN_ANALYSIS_REQUIREMENTS_v0.6.0.md): summary counts
+# Reverse modes: summary counts
     # describe the discovered ancestry graph. Each edge source is an ancestor
     # outpoint; ownership buckets are informational (never traversal gates).
     if trace.trace_mode in (
@@ -1391,7 +1389,7 @@ async def _compute_summary(
             oldest_block_time=oldest_time,
         )
 
-    # Blockchain Analysis mode (BLOCKCHAIN_ANALYSIS_MODE_REQUIREMENTS.md):
+    # Blockchain Analysis mode:
     # summary counts describe the analysed graph, not the user's wallet.
     # Ownership never gates anything here - "current UTXOs" are the spent /
     # unspent outpoints the walk actually visited, "unknown outputs" are graph

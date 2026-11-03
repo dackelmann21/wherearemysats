@@ -39,7 +39,7 @@ class Settings:
     max_trace_depth: int = 100
     max_auto_trace_hops: int = 100
 
-    # Blockchain Analysis safety limits (BLOCKCHAIN_ANALYSIS_MODE_REQUIREMENTS.md).
+    # Blockchain Analysis safety limits.
     # The analysis walk is spend-state-driven and has no natural ownership
     # bound, so these caps keep a hostile/wide transaction graph from running
     # away. Reaching a cap is a terminating, partial state (ANALYSIS_LIMIT_REACHED).
@@ -47,14 +47,14 @@ class Settings:
     analysis_max_transactions: int = 200
     analysis_max_outpoints: int = 500
 
-    # Blockchain Analysis background execution (BLOCKCHAIN_ANALYSIS_ASYNC_UX_
-    # PERFORMANCE_FIX_REQUIREMENTS.md). Bounded concurrency for the background
+    # Blockchain Analysis background execution.
+    # Bounded concurrency for the background
     # analysis worker. Default 1: a single whale analysis holds the worker;
     # further analyses queue as jobs instead of spawning unlimited threads.
     analysis_max_concurrent_jobs: int = 1
 
-    # Reverse Provenance safety limits
-    # (REVERSE_PROVENANCE_REQUIREMENTS_v0.6.0.md). Ownership-gated reverse
+    # Reverse Provenance safety limits.
+    # Ownership-gated reverse
     # traversal still needs hard caps; reaching one is a terminating partial
     # state (REVERSE_LIMIT_REACHED), never misreported as NEEDS_CLASSIFICATION.
     reverse_provenance_max_hops: int = 32

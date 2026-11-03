@@ -3,8 +3,7 @@ window.TraceView = (function () {
 
   const tags = ["INITIAL_ACQUISITION", "WALLET_MIGRATION", "CONSOLIDATION", "UTXO_SPLIT", "CHANGE", "PAYMENT", "SELF_TRANSFER", "UNKNOWN"];
 
-  // Reverse modes (REVERSE_PROVENANCE_REQUIREMENTS_v0.6.0.md +
-  // REVERSE_BLOCKCHAIN_ANALYSIS_REQUIREMENTS_v0.6.0.md): discovered ancestors
+  // Reverse modes: discovered ancestors
   // run backward toward older on-chain inputs while the graph stays
   // chronological. Reverse Provenance is ownership-gated (follows OWNED
   // predecessors only, UNKNOWN stops) and Reverse Blockchain Analysis is
@@ -40,8 +39,8 @@ window.TraceView = (function () {
     return m === "BLOCKCHAIN_ANALYSIS_REVERSE";
   }
 
-  // Background analysis job polling
-  // (BLOCKCHAIN_ANALYSIS_ASYNC_UX_PERFORMANCE_FIX_REQUIREMENTS.md): walks run
+  // Background analysis job polling:
+  // walks run
   // on the backend worker; the view shows a QUEUED / RUNNING banner with live
   // progress counters and polls until a terminal state. On COMPLETE /
   // LIMIT_REACHED / FAILED the view auto-refreshes once (guard: job id) so the
@@ -464,7 +463,7 @@ window.TraceView = (function () {
 
   // ------------------------------------------------------------- Timeline
   // Pure, side-effect-free hop/table model
-  // (TRACE_UI_DAG_TIMELINE_FIX_REQUIREMENTS_v2.md, section A). Mirrored
+  // Mirrored
   // 1:1 by a unit test.
   //
   // A hop is graph depth, not evidence the chain is linear. Every outpoint
@@ -488,7 +487,7 @@ window.TraceView = (function () {
     const dismByKey = {};
     (full.dismissed_candidates || []).forEach(function (d) { dismByKey[d.txid + ":" + d.vout] = d; });
 
-    // Whole-transaction topology/batch (MIXED_PROVENANCE_BATCH_REQUIREMENTS.md);
+    // Whole-transaction topology/batch;
     // a pure blockchain fact, never a custody signal.
     const txMeta = {};
     (full.transactions || []).forEach(function (t) { txMeta[t.txid] = t; });
@@ -586,8 +585,7 @@ window.TraceView = (function () {
     return { hops: model, byKey: byKey, txMeta: txMeta, suggByKey: suggByKey, dismByKey: dismByKey };
   }
 
-  // Reverse-trace timeline model (REVERSE_PROVENANCE_REQUIREMENTS_v0.6.0.md
-  // "Timeline" + REVERSE_BLOCKCHAIN_ANALYSIS_REQUIREMENTS_v0.6.0.md "Timeline").
+  // Reverse-trace timeline model.
   //
   // Reverse edges store `hop_number` = the reverse discovery hop of the edge
   // DESTINATION (selected target = 0, its producing-transaction predecessor
@@ -866,8 +864,7 @@ window.TraceView = (function () {
   function renderClassify(el, full, traceId, latest) {
     // Blockchain Analysis never classifies (spec section 15): ownership is
     // display-only metadata and "following" (the outpoint modal action) is the
-    // only deliberate-extension control. Both directions behave identically
-    // (REVERSE_BLOCKCHAIN_ANALYSIS_REQUIREMENTS_v0.6.0.md "Classification UI").
+    // only deliberate-extension control. Both directions behave identically.
     if (isAnalysisMode(full)) {
       const isReverse = full.trace.trace_mode === "BLOCKCHAIN_ANALYSIS_REVERSE";
       el.innerHTML = '<div class="panel"><h2>No classification</h2>' +

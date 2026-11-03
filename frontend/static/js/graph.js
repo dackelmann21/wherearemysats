@@ -1,8 +1,7 @@
 // Canvas-based directed graph renderer for the lineage view.
 // No external libraries (REQ 34: no CDNs at runtime).
 //
-// Coordinate-system contract (TRACE_UI_DAG_TIMELINE_FIX_REQUIREMENTS_v2.md,
-// section D): ALL graph geometry (outpoint boxes, transaction squares, edges,
+// Coordinate-system contract: ALL graph geometry (outpoint boxes, transaction squares, edges,
 // arrowheads, fee/topology/provenance chips and labels) lives in one graph
 // /world coordinate system and is transformed to the viewport by the single
 // shared ctx transform applied in draw().  Edge endpoints and arrowheads are
@@ -10,8 +9,7 @@
 // derived from getBoundingClientRect()/screen positions, so zooming and
 // panning can never make elements drift relative to each other.
 //
-// Horizontal layout (MERGE_INPUT_CONTEXT_AND_GRAPH_RENDERER_FIX_REQUIREMENTS
-// .md Part B): x(depth) = LEFT_MARGIN + depth * COLUMN_SPACING. Every
+// Horizontal layout: x(depth) = LEFT_MARGIN + depth * COLUMN_SPACING. Every
 // distinct computed graph depth maps to its own column and the merge
 // transaction sits strictly after the deepest tracked predecessor, so the
 // graph flows left-to-right across depth instead of stacking node types.
@@ -19,8 +17,7 @@ window.LineageGraph = (function () {
   const NODE_W = 230;
   const NODE_H = 78;
   const TX_SIZE = 26;
-  // Horizontal layout constants (MERGE_INPUT_CONTEXT_AND_GRAPH_RENDERER_FIX
-  // _REQUIREMENTS.md Part B): every distinct graph depth gets its own column
+  // Horizontal layout constants: every distinct graph depth gets its own column
   // spaced LEFT_MARGIN + depth * COLUMN_SPACING in world coordinates, so a
   // long trace grows wider than the viewport and stays a navigable canvas.
   const COLUMN_SPACING = 280;
@@ -483,7 +480,7 @@ window.LineageGraph = (function () {
     ctx.textAlign = "center";
 
     // Topology shape: N non-coinbase inputs -> M meaningful outputs. This is a
-    // pure blockchain fact (MIXED_PROVENANCE_BATCH_REQUIREMENTS.md) and never
+    // pure blockchain fact and never
     // a custody signal. A likely batch gets its own violet chip.
     const d = n.data || {};
     const ins = (d.inputs || []).filter(function (i) {
@@ -748,8 +745,7 @@ window.LineageGraph = (function () {
     layout(model, r.visW || 1000, r.visH || 700);
     r.fit();
 
-    // Pointer gesture handling (TRACE_UI_DAG_TIMELINE_FIX_REQUIREMENTS_v2.md
-    // section B): a click is a pointerup with total movement within THRESH CSS
+    // Pointer gesture handling: a click is a pointerup with total movement within THRESH CSS
     // pixels of the pointerdown point; anything larger is a pan/drag. The node
     // under the pointer is captured at pointerdown (downHit) and opened on
     // click, so 1-2px of jitter never cancels a node click and the node that

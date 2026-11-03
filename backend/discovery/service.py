@@ -1,4 +1,4 @@
-"""One-time wallet discovery (WALLET_XPUB_DISCOVERY_REQUIREMENTS.md).
+"""One-time wallet discovery.
 
 The service turns a user-supplied extended *public* key (xpub / ypub / zpub)
 into a set of owned addresses without ever sending the key to the Bitcoin
@@ -121,7 +121,7 @@ class DiscoveryCapabilityError(DiscoveryError):
     This is the ONLY error class that may trigger the scantxoutset fallback.
     Protocol/programmer errors (invalid RPC parameters, descriptors, ...) and
     transport errors must never be silently hidden behind the UTXO-only
-    fallback (WALLET_XPUB_DISCOVERY_REQUIREMENTS.md).
+    fallback.
     """
 
     def __init__(self, message: str, cause_message: str = ""):

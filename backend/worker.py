@@ -1,6 +1,6 @@
 """Bounded background executor for Blockchain Analysis walk jobs.
 
-BLOCKCHAIN_ANALYSIS_ASYNC_UX_PERFORMANCE_FIX_REQUIREMENTS.md: the expensive
+The expensive
 spend-state walk (RPC-bound, can fan out to hundreds of outpoints) is moved
 off the synchronous HTTP request path into this worker. Each job runs in a
 dedicated OS thread owning its own asyncio event loop and thread-bound

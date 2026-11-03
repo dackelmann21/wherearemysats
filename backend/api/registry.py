@@ -268,7 +268,7 @@ async def delete_all_bitcoin_addresses() -> dict[str, int]:
 
 
 # ---------------------------------------------------------------------------
-# One-time wallet discovery (WALLET_XPUB_DISCOVERY_REQUIREMENTS.md)
+# One-time wallet discovery
 #
 # PRIVACY: the extended public key is accepted by parse/preview/run, used in
 # memory only, and never returned or stored. All responses carry a redacted

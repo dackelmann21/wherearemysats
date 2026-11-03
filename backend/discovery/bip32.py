@@ -8,8 +8,8 @@ This module implements exactly what one-time wallet discovery needs:
     for p2wpkh / p2sh-p2wpkh / p2pkh / p2tr script types
 
 Everything happens in-process. The extended key is never written to disk,
-never logged and never sent to the Bitcoin Core node (privacy requirement of
-WALLET_XPUB_DISCOVERY_REQUIREMENTS.md section 7/8): the node is only queried
+never logged and never sent to the Bitcoin Core node (privacy
+requirement): the node is only queried
 with concrete ``addr()`` descriptors for already-derived addresses.
 
 No third-party cryptography: secp256k1 point arithmetic is implemented from

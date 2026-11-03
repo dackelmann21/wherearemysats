@@ -223,8 +223,7 @@ window.App = (function () {
       '<div class="amt">' + (i.value_sats != null ? Fmt.sats(i.value_sats) + " sats" : "n/a") + "</div></div>";
   }
 
-  // Merge / consolidation input context
-  // (MERGE_INPUT_CONTEXT_AND_GRAPH_RENDERER_FIX_REQUIREMENTS.md Part A).
+  // Merge / consolidation input context.
   // Rendered only when the transaction came from the trace payload (so the
   // role/related-trace fields are present): groups inputs into LINEAGE /
   // KNOWN_TRACE / CO buckets, shows the referenced-output ownership state,
@@ -709,14 +708,13 @@ window.App = (function () {
   }
 
   function analysisFollowSectionHtml(ctx, out) {
-    // Blockchain Analysis action (BLOCKCHAIN_ANALYSIS_MODE_REQUIREMENTS.md):
+    // Blockchain Analysis action:
     // deliberately extend the walk by following the spending transaction of a
     // spent output. Only surfaced for spent outputs that carry one. Following
     // never classifies the output and never changes ownership.
     if (!ctx || !ctx.traceId || !ctx.full) return "";
     const mode = ctx.full.trace.trace_mode;
-    // Reverse analysis action (REVERSE_BLOCKCHAIN_ANALYSIS_REQUIREMENTS_v0.6.0
-    // .md "Job operations"): deliberately continue the ancestry backward from
+    // Reverse analysis action: deliberately continue the ancestry backward from
     // a discovered ancestor outpoint. Unlike forward analysis there is no
     // spent-output requirement - the reverse walk targets a NEWER outpoint and
     // continues from any old input it already surfaced. Wording is

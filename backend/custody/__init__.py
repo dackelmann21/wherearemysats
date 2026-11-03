@@ -1,7 +1,5 @@
 """Custodial / pooled-funds boundary support.
 
-See CUSTODIAL_BOUNDARY_REQUIREMENTS.md.
-
 This package implements the *analysis* side of custody handling:
 
 - `detect`        : conservative POSSIBLE_CUSTODIAL_BOUNDARY detection

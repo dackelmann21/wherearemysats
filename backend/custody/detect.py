@@ -1,6 +1,6 @@
 """Detection of likely pooled / custodial situations.
 
-Per MIXED_PROVENANCE_BATCH_REQUIREMENTS.md (sections 12-14) the detector
+By design the detector
 returns NO suggestions on its own. Bitcoin does not prove input->output
 mapping in multi-input/multi-output transactions, so the following must never
 independently produce a custody flag:

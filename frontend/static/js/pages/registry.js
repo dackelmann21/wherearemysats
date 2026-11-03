@@ -1,5 +1,4 @@
 // Known Addresses registry screen.
-// Spec: KNOWN_ADDRESS_REGISTRY_REQUIREMENTS.md
 //   - Import by paste (CSV / any-format lines) or a .csv file
 //   - Automatically recognises header columns address/label/wallet/type
 //   - Lists wallet groups with counts, per-address search, batch history

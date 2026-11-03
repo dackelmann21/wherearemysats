@@ -304,7 +304,7 @@ table.data td.mono, table.data td.amt { font-family: var(--mono); }
 table.data tr.clickable { cursor: pointer; }
 table.data tr.clickable:hover { background: var(--bg-panel-2); }
 
-/* Grouped collapsible timeline (TRACE_UI_DAG_TIMELINE_FIX_REQUIREMENTS_v2.md A). */
+/* Grouped collapsible timeline. */
 .timeline-groups { display: flex; flex-direction: column; gap: 10px; }
 .hop-group { border: 1px solid var(--border); border-radius: 8px; background: var(--bg-panel); overflow: hidden; }
 .hop-header {
@@ -457,7 +457,7 @@ table.data tr.clickable:hover { background: var(--bg-panel-2); }
 .cust-reasons { margin: 6px 0; padding-left: 18px; color: var(--text-dim); font-size: 12px; }
 .cust-reclass .classify-bar { margin-top: 6px; }
 
-/* Acquisitions (ACQUISITION_TRACKING_V1_REQUIREMENTS.md) */
+/* Acquisitions */
 .acq-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px 16px; margin-top: 10px; }
 .acq-field { display: flex; flex-direction: column; gap: 4px; }
 .acq-field.span-3 { grid-column: span 3; }

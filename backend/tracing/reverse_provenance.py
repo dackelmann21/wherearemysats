@@ -1,6 +1,6 @@
 """Reverse Provenance mode walker.
 
-REVERSE_PROVENANCE_REQUIREMENTS_v0.6.0.md. An isolated, ownership-aware
+An isolated, ownership-aware
 reverse walker next to the frozen Forward Provenance engine and the
 frozen forward BlockchainAnalysisWalker.
 

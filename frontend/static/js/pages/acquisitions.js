@@ -1,4 +1,4 @@
-// Acquisitions page (ACQUISITION_TRACKING_V1_REQUIREMENTS.md).
+// Acquisitions page.
 // Record user-supplied Acquisition metadata anchored to an exact on-chain
 // outpoint (TXID:VOUT). Saving one automatically creates + runs a normal
 // forward provenance trace from that outpoint. This page is NOT a tax engine:

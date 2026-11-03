@@ -1,7 +1,8 @@
 # Installation
 
 This guide installs WhereAreMySats (WAMS) with Docker on a fresh **Ubuntu Server LTS**
-(tested on 24.04), for example a virtual machine in your home network.
+(tested on 22.04; 24.04 should work the same), for example a virtual machine in your
+home network.
 
 **Before you start:**
 
@@ -20,7 +21,7 @@ Log in to the server and paste this block:
 curl -fsSL https://get.docker.com | sudo sh
 
 # 2. Download WAMS, check the checksum and unpack it into ~/wherearemysats
-VERSION=0.19.8
+VERSION=0.19.9
 BASE=https://github.com/dackelmann21/wherearemysats/releases/download/v$VERSION
 mkdir -p ~/wherearemysats && cd ~/wherearemysats
 curl -fsSLO $BASE/wams-public-$VERSION.tar.gz
@@ -43,7 +44,7 @@ curl -fsS --retry 12 --retry-delay 5 --retry-all-errors http://127.0.0.1:8080/he
 `sha256sum -c` must print `OK`; otherwise nothing is unpacked and you should not use
 the download.
 
-**Expected result of step 5:** `{"status":"ok","app":"wherearemysats","version":"0.19.8","db_connected":true}`.
+**Expected result of step 5:** `{"status":"ok","app":"wherearemysats","version":"0.19.9","db_connected":true}`.
 The first start takes a few seconds (the container shows `health: starting` in
 `sudo docker ps`); the check retries for about a minute. Lines like
 `curl: (7) Failed to connect`, "Connection reset by peer" or "connection refused"
@@ -65,6 +66,50 @@ address). Then:
 
 3. Follow the **Getting started** checklist on the Dashboard.
 
+## Manual download (alternative to step 2)
+
+If you prefer to download the archive in your browser and copy it to the server
+yourself, use this instead of step 2 of the Quick install. Step 1 (Docker) stays the
+same; installing Docker and building the image still need internet access on the server.
+
+1. On the [Releases page](https://github.com/dackelmann21/wherearemysats/releases),
+   download both files of the version: `wams-public-0.19.9.tar.gz` and
+   `wams-public-0.19.9.tar.gz.sha256`.
+2. Optional, before copying: check the checksum on your computer. On Windows
+   (PowerShell, in the download folder):
+
+   ```powershell
+   Get-FileHash .\wams-public-0.19.9.tar.gz -Algorithm SHA256
+   ```
+
+   The printed hash must match the first word in the `.sha256` file (the case of the
+   letters does not matter). On Linux run `sha256sum -c wams-public-0.19.9.tar.gz.sha256`,
+   on macOS `shasum -a 256 -c wams-public-0.19.9.tar.gz.sha256`; both must print `OK`.
+3. Copy both files to your home directory on the server. On Windows (PowerShell; `scp`
+   is included since Windows 10), Linux or macOS, in the download folder:
+
+   ```bash
+   scp wams-public-0.19.9.tar.gz wams-public-0.19.9.tar.gz.sha256 <user>@<vm-ip>:~
+   ```
+
+   Replace `<user>` (your Linux user on the server) and `<vm-ip>` (the server's address
+   in your home network) **including the angle brackets**. A graphical tool such as
+   WinSCP works as well.
+4. On the server, move the files into the installation directory, check the checksum
+   and unpack:
+
+   ```bash
+   VERSION=0.19.9
+   mkdir -p ~/wherearemysats && cd ~/wherearemysats
+   mv ~/wams-public-$VERSION.tar.gz* .
+   sha256sum -c wams-public-$VERSION.tar.gz.sha256 && tar -xzf wams-public-$VERSION.tar.gz --strip-components=1
+   ```
+
+   `sha256sum -c` must print `OK`; otherwise nothing is unpacked.
+
+Then continue with step 3 of the Quick install (`.env`, start, health check, browser),
+from inside `~/wherearemysats`.
+
 ## Update
 
 Read the [release notes](docs/releases/) of the new version first and make a backup
@@ -72,7 +117,7 @@ Read the [release notes](docs/releases/) of the new version first and make a bac
 with the new version number, rebuild and check:
 
 ```bash
-VERSION=0.19.8        # set the new version here
+VERSION=0.19.9        # set the new version here
 BASE=https://github.com/dackelmann21/wherearemysats/releases/download/v$VERSION
 cd ~/wherearemysats
 curl -fsSLO $BASE/wams-public-$VERSION.tar.gz
@@ -81,6 +126,10 @@ sha256sum -c wams-public-$VERSION.tar.gz.sha256 && tar -xzf wams-public-$VERSION
 sudo docker compose -p wherearemysats up -d --build
 curl -fsS --retry 12 --retry-delay 5 --retry-all-errors http://127.0.0.1:8080/health; echo
 ```
+
+If you download manually, replace the two `curl -fsSLO` lines with the
+[Manual download](#manual-download-alternative-to-step-2) steps 1 to 3 and the `mv` line
+of its step 4.
 
 Your `.env` and your data stay as they are; they are not part of the archive.
 `/health` shows the new version. Reload the browser page with Ctrl+F5. More details:
@@ -108,7 +157,7 @@ in that group is equivalent to root access.
 
 | Resource | Recommendation (not a measured minimum) |
 |---|---|
-| OS | Ubuntu Server LTS (24.04 tested), 64-bit; other Linux distributions work with Docker installed their own way |
+| OS | Ubuntu Server LTS (22.04 tested, 24.04 should work the same), 64-bit; other Linux distributions work with Docker installed their own way |
 | CPU | 2 vCPU |
 | RAM | 4 GB (2 GB works for small datasets; large report/export runs peaked near 1 GB in synthetic benchmarks) |
 | Disk | 20 GB, local and persistent (do not put the SQLite database on a network file system) |
@@ -215,7 +264,7 @@ stay with the archive.
 sudo apt-get install -y git
 git clone https://github.com/dackelmann21/wherearemysats.git ~/wherearemysats
 cd ~/wherearemysats
-git checkout v0.19.8              # a release tag, not an arbitrary branch state
+git checkout v0.19.9              # a release tag, not an arbitrary branch state
 ```
 
 Then continue with step 3. To update: `git fetch --tags && git checkout v<new-version>`,

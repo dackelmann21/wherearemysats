@@ -1,4 +1,4 @@
-"""Exchange Exit service (EXCHANGE_EXIT_REQUIREMENTS.md v0.11.0).
+"""Exchange Exit service.
 
 An Exchange Exit is the user-confirmed blockchain boundary where BTC leaves
 self-custody to an exchange. It is a first-class domain object:

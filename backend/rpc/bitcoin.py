@@ -362,8 +362,7 @@ class BitcoinRPCClient:
         returns its final result after the scan completes or is aborted
         (``{from_height, to_height, relevant_blocks, completed}``, or
         ``completed=false`` after an abort). It MUST therefore run in a
-        dedicated background task so the HTTP/browser request is never blocked
-        (REVERSE_ADDRESS_DISCOVERY_LIFECYCLE_FIX_REQUIREMENTS.md).
+        dedicated background task so the HTTP/browser request is never blocked.
 
         Uses the long discovery timeout like the pre-lifecycle address-discovery
         call: a bounded chain scan may legitimately take minutes, and this call

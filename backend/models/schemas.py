@@ -21,12 +21,12 @@ class TraceStatus(str):
     # Complete because exact lineage ended at a confirmed custodial boundary.
     # The line stops there by user confirmation, not because of a gap.
     COMPLETE_AT_CUSTODY_BOUNDARY = "COMPLETE_AT_CUSTODY_BOUNDARY"
-    # Blockchain Analysis walking stopped at an analysis safety limit
-    # (BLOCKCHAIN_ANALYSIS_MODE_REQUIREMENTS.md). The graph collected so far is
+    # Blockchain Analysis walking stopped at an analysis safety limit.
+    # The graph collected so far is
     # intentionally partial and can be extended with the follow action.
     ANALYSIS_LIMIT_REACHED = "ANALYSIS_LIMIT_REACHED"
-    # Reverse Provenance walking stopped at a reverse safety limit
-    # (REVERSE_PROVENANCE_REQUIREMENTS_v0.6.0.md). Never misreported as
+    # Reverse Provenance walking stopped at a reverse safety limit.
+    # Never misreported as
     # NEEDS_CLASSIFICATION; the partial graph is preserved and can be extended
     # with Re-check / continue.
     REVERSE_LIMIT_REACHED = "REVERSE_LIMIT_REACHED"
@@ -44,13 +44,12 @@ class TraceMode(str):
                            transactions. Only the walk performs no ownership
                            classification. Persisted value stays backward
                            compatible (legacy rows mean forward analysis).
-    REVERSE_PROVENANCE   - Ownership-aware Reverse Provenance mode
-                           (REVERSE_PROVENANCE_REQUIREMENTS_v0.6.0.md): from a
+    REVERSE_PROVENANCE   - Ownership-aware Reverse Provenance mode:
+                           from a
                            concrete TXID:VOUT target, follows OWNED predecessor
                            ancestry backward while showing all inputs as
                            on-chain context.
-    BLOCKCHAIN_ANALYSIS_REVERSE - Ownership-neutral reverse ancestry walk
-                           (REVERSE_BLOCKCHAIN_ANALYSIS_REQUIREMENTS_v0.6.0.md):
+    BLOCKCHAIN_ANALYSIS_REVERSE - Ownership-neutral reverse ancestry walk:
                            every resolvable predecessor input is followed
                            regardless of ownership. Ownership is display
                            metadata only.
@@ -85,7 +84,7 @@ class ClassificationSource(str):
     DESCRIPTOR = "DESCRIPTOR"
     XPUB = "XPUB"
     HEURISTIC = "HEURISTIC"
-    # Wallet discovery / evidence sources (WALLET_XPUB_DISCOVERY_REQUIREMENTS.md).
+    # Wallet discovery / evidence sources.
     # XPUB_DISCOVERY - address found by scanning the chain against a derived
     #                  chain from a user-supplied extended public key.
     # MANUAL_IMPORT  - address imported by hand / CSV paste into the registry.
@@ -96,7 +95,7 @@ class ClassificationSource(str):
     USER_CONFIRMED = "USER_CONFIRMED"
     # Ownership conveyed by tracing itself (a successor of an owned outpoint).
     # Never a registry / registry authority: propagation alone is not custody
-    # evidence (MIXED_PROVENANCE_BATCH_REQUIREMENTS.md).
+    # evidence.
     PROPAGATED = "PROPAGATED"
     # Legacy trace-start assumption: older releases marked the chosen start
     # outpoint OWNED/TRACE_START at trace creation. Trace starts are traversal
@@ -154,8 +153,7 @@ class RelationshipType(str):
 class TraceInputRole(str):
     """Role of a transaction input within the trace being viewed.
 
-    Merge / consolidation input context (MERGE_INPUT_CONTEXT_AND_GRAPH
-    _RENDERER_FIX_REQUIREMENTS.md). Display-only classification - the fact
+    Merge / consolidation input context. Display-only classification - the fact
     recorded is that this input UTXO was consumed together with the traced
     lineage input by the same spending transaction. It NEVER makes a co-input
     an ancestor of the Acquisition trace or claims any sat-level attribution.
@@ -374,8 +372,8 @@ class InputInfo(BaseModel):
     # Spending relationship
     spending_txid: Optional[str] = None
     our_trace_spend: bool = False
-    # Merge / consolidation input context
-    # (MERGE_INPUT_CONTEXT_AND_GRAPH_RENDERER_FIX_REQUIREMENTS.md). Enriched on
+    # Merge / consolidation input context.
+    # Enriched on
     # the trace/detail payload only; ownership is the state of the REFERENCED
     # previous output, and the role/related traces are display context that
     # never alters edges/provenance.
@@ -417,7 +415,7 @@ class OutputInfo(BaseModel):
     # FIX-OWN-1b: the confirmation carries address evidence, so it outranks a
     # stored EXTERNAL. A legacy registry entry without evidence does not.
     confirmation_outranks_external: bool = False
-    # Provenance / topology (MIXED_PROVENANCE_BATCH_REQUIREMENTS.md)
+    # Provenance / topology
     provenance_state: str = ProvenanceState.UNKNOWN
     provenance_reasons: list[str] = Field(default_factory=list)
     transaction_topology: str = TransactionTopology.UNKNOWN
@@ -443,7 +441,7 @@ class TransactionInfo(BaseModel):
     note: Optional[str] = None
     unknown_input_count: int = 0
     raw: Optional[Any] = None
-    # Whole-transaction topology (MIXED_PROVENANCE_BATCH_REQUIREMENTS.md).
+    # Whole-transaction topology.
     transaction_topology: str = TransactionTopology.UNKNOWN
     likely_batch: bool = False
 
@@ -464,7 +462,7 @@ class TraceCreate(BaseModel):
 class AnalysisFollowRequest(BaseModel):
     """Follow the spending transaction of a spent output in an analysis trace.
 
-    BLOCKCHAIN_ANALYSIS_MODE_REQUIREMENTS.md: re-walks the analysis trace with
+    Re-walks the analysis trace with
     the followed output as an additional seed so a limit-truncated graph can be
     deliberately extended. Never changes ownership state.
     """
@@ -478,8 +476,7 @@ class AnalysisJobState(str):
 
     Distinct from the trace domain state: a job describes whether the
     background computation is queued / running / done. A job reaching a safety
-    limit is LIMIT_REACHED while the trace itself stays ANALYSIS_LIMIT_REACHED
-    (BLOCKCHAIN_ANALYSIS_ASYNC_UX_PERFORMANCE_FIX_REQUIREMENTS.md section 6).
+    limit is LIMIT_REACHED while the trace itself stays ANALYSIS_LIMIT_REACHED.
     """
 
     QUEUED = "QUEUED"
@@ -629,8 +626,7 @@ class TraceSummary(BaseModel):
     unknown_outputs: int = 0
     merges: int = 0
     splits: int = 0
-    # Reverse modes (REVERSE_PROVENANCE_REQUIREMENTS_v0.6.0.md /
-    # REVERSE_BLOCKCHAIN_ANALYSIS_REQUIREMENTS_v0.6.0.md). Always None/0 for
+    # Reverse modes. Always None/0 for
     # forward modes so forward summaries never change shape.
     target_outpoint: Optional[str] = None
     owned_ancestors: int = 0
@@ -885,7 +881,7 @@ class OwnershipCustodyConflict(BaseModel):
 
 
 # ---------------------------------------------------------------------------
-# One-time wallet discovery (WALLET_XPUB_DISCOVERY_REQUIREMENTS.md)
+# One-time wallet discovery
 #
 # PRIVACY: no request/response model in this section ever carries the raw
 # extended public key. The key is accepted once by the parse endpoint, kept in
@@ -1039,7 +1035,7 @@ class AddressConflict(BaseModel):
 
 
 # ---------------------------------------------------------------------------
-# Acquisitions (ACQUISITION_TRACKING_V1_REQUIREMENTS.md)
+# Acquisitions
 # ---------------------------------------------------------------------------
 
 

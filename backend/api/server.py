@@ -64,8 +64,8 @@ rpc_client = ConfiguredBitcoinRPCClient(settings)
 
 from backend.tracing.engine import TraceEngine  # noqa: E402
 
-# Acquisition Review + Disposals v1
-# (ACQUISITION_REVIEW_AND_DISPOSALS_V1_REQUIREMENTS.md): the app-level
+# Acquisition Review + Disposals v1:
+# the app-level
 # exception handlers below need the two Disposal error classes; the routes
 # live in backend/api/acquisitions.py (P3-3).
 from backend.acquisitions.disposal_service import (  # noqa: E402
@@ -76,7 +76,7 @@ from backend.acquisitions.disposal_service import (  # noqa: E402
 engine = TraceEngine(db, rpc_client, max_depth=settings.max_trace_depth)
 coverage_requests = CoverageRequests()
 
-# Blockchain Analysis mode (BLOCKCHAIN_ANALYSIS_MODE_REQUIREMENTS.md): an
+# Blockchain Analysis mode: an
 # ownership-independent, spend-state-driven walker, additive to the Forward
 # Provenance engine. Uses the engine's stable readonly helpers only.
 from backend.tracing.analysis import BlockchainAnalysisWalker  # noqa: E402
@@ -88,8 +88,8 @@ analysis = BlockchainAnalysisWalker(
     max_outpoints=settings.analysis_max_outpoints,
 )
 
-# Background executor for Blockchain Analysis walks
-# (BLOCKCHAIN_ANALYSIS_ASYNC_UX_PERFORMANCE_FIX_REQUIREMENTS.md). Long
+# Background executor for Blockchain Analysis walks.
+# Long
 # spend-state walks never run on the request path; each job runs in a bounded
 # worker thread owning its own loop-bound Database/RPC/engine/walker.
 from backend.worker import AnalysisWorker, recover_stale_analysis_jobs  # noqa: E402
@@ -102,8 +102,8 @@ analysis_worker = AnalysisWorker(settings)
 electrs_client = ElectrsClient(settings.electrs_url, timeout=settings.electrs_timeout)
 address_discovery = AddressDiscovery(rpc_client, electrs=electrs_client)
 
-# Persistent address-discovery scan lifecycle
-# (REVERSE_ADDRESS_DISCOVERY_LIFECYCLE_FIX_REQUIREMENTS.md): a long scanblocks
+# Persistent address-discovery scan lifecycle:
+# a long scanblocks
 # discovery is a durable QUEUED/RUNNING/COMPLETE/CANCELLED/FAILED job that the
 # browser polls - never one long request. Isolated from AnalysisWorker.
 address_scan_manager = AddressScanManager(db, rpc_client, discovery=address_discovery)

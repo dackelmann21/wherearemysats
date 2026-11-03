@@ -1,6 +1,6 @@
 """Blockchain Analysis - Reverse walker.
 
-REVERSE_BLOCKCHAIN_ANALYSIS_REQUIREMENTS_v0.6.0.md. An isolated, ownership-
+An isolated, ownership-
 neutral reverse ancestry walker for BLOCKCHAIN_ANALYSIS_REVERSE traces.
 
 It answers: starting from any Bitcoin outpoint (``TXID:VOUT``), what on-chain

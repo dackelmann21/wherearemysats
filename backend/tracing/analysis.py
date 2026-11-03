@@ -1,6 +1,6 @@
 """Blockchain Analysis mode walker.
 
-BLOCKCHAIN_ANALYSIS_MODE_REQUIREMENTS.md. A strictly additive module next to
+A strictly additive module next to
 the frozen Forward Provenance engine (spec section 14).
 
 The walk is *ownership-independent*: an arbitrary transaction, address or

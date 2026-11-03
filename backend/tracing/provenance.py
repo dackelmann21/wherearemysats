@@ -2,8 +2,7 @@
 
 Bitcoin proves *consumed outpoints* and *created outputs*. In a transaction
 with several inputs and/or several outputs, it does NOT prove which input
-"became" which output. This module makes that distinction explicit
-(MIXED_PROVENANCE_BATCH_REQUIREMENTS.md, section 6):
+"became" which output. This module makes that distinction explicit:
 
 ``transaction_topology`` is about the shape of the transaction itself
 (DIRECT / SPLIT / MERGE / MIXED). It is a pure blockchain fact and never
