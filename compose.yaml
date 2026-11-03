@@ -1,0 +1,46 @@
+services:
+  bitcoin-lineage:
+    image: wherearemysats:local
+    build:
+      context: .
+
+    restart: unless-stopped
+    stop_grace_period: 60s
+
+    # Published on the host's loopback only by default (OF-1): WAMS has no
+    # login. For LAN access set WAMS_BIND_ADDRESS=0.0.0.0 (or one host
+    # address) in .env; then everyone who reaches the port is an operator.
+    ports:
+      - "${WAMS_BIND_ADDRESS:-127.0.0.1}:${WAMS_HTTP_PORT:-8080}:8080"
+
+    env_file:
+      - path: .env
+        required: false
+
+    environment:
+      # Container-internal listen address; exposure is set by ports above.
+      APP_HOST: 0.0.0.0
+      APP_PORT: 8080
+      DATA_DIR: /app/data
+      DATABASE_PATH: /app/data/lineage.db
+
+    volumes:
+      - lineage-data:/app/data
+
+    # Linux Docker Engine 20.10+: reach a Core process on the host.
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+    security_opt:
+      - no-new-privileges:true
+
+    cap_drop:
+      - ALL
+
+    read_only: true
+
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=64m
+
+volumes:
+  lineage-data:
