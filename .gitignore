@@ -1,0 +1,61 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Environment / secrets (REQ 35: real .env files never committed)
+.env
+*.env
+!*.env.example
+node-settings*.json
+.node-settings-*
+compose.local.yaml
+backups/
+
+# Database
+*.db
+*.db-wal
+*.db-shm
+data/
+
+# Build artifacts
+docker-image/
+*.tar.gz
+dist/
+build/
+
+# IDE / OS
+.vscode/
+.idea/
+.DS_Store
+
+# Privacy: local data, exports, logs and backups
+*.sqlite
+*.sqlite3
+*.csv
+*.log
+*.bak
+
+# Node credentials / key material
+.cookie
+*.pem
+*.key
+*.psbt
+*.txn
+
+# Windows download/OS metadata
+*:Zone.Identifier
+Thumbs.db
+desktop.ini
+
+# Claude Code local settings
+.claude/settings.local.json
+
+# Local scratch/check artefacts (SEC-28). Files already tracked there (the
+# regtest demo) stay tracked; nothing new is picked up by `git add -A`.
+scratch/
